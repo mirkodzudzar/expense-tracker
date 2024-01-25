@@ -33,6 +33,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application User Credentials
+    |--------------------------------------------------------------------------
+    */
+
+    'user_name' => env('USER_NAME', 'user'),
+    'user_email' => env('USER_EMAIL', 'user@user.com'),
+    'user_password' => env('USER_PASSWORD', 'password'),
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Debug Mode
     |--------------------------------------------------------------------------
     |
@@ -168,6 +179,8 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Providers\FortifyServiceProvider::class,
+        App\Providers\JetstreamServiceProvider::class,
     ])->toArray(),
 
     /*
