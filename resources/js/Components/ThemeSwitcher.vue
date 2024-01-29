@@ -1,22 +1,12 @@
 <template>
-    <div class="flex justify-center">
+    <div class="flex justify-center" ref="dropdownContainer">
         <div class="relative">
             <button
-                class="flex text-md border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 active:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 dark:active:text-gray-600"
                 @click="toggleDropdown"
+                class="flex text-md border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 active:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 dark:active:text-gray-600"
             >
-                <SunIcon
-                    v-if="option === 'light'"
-                    class="h-6 w-6"
-                    aria-hidden="true"
-                />
-                <MoonIcon
-                    v-if="option === 'dark'"
-                    class="h-6 w-6"
-                    aria-hidden="true"
-                />
-                <ComputerDesktopIcon
-                    v-if="option === 'system'"
+                <component
+                    :is="currentIcon"
                     class="h-6 w-6"
                     aria-hidden="true"
                 />
@@ -26,25 +16,17 @@
                 class="absolute right-0 mt-2 bg-white border border-gray-300 rounded-b shadow-lg dark:bg-gray-800 dark:border-gray-700 rounded"
             >
                 <button
-                    @click="setOption('light')"
-                    class="darkflex themeColor-center hover:bg-gray-100 py-1 dark:hover:bg-gray-800 w-full text-left cursor-pointer px-3 focus:outline-none focus:ring rounded truncate whitespace-nowrap text-gray-500 active:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 dark:active:text-gray-600 flex themeColor-center"
+                    v-for="item in options"
+                    :key="item.value"
+                    @click="setOption(item.value)"
+                    class="themeColor-center hover:bg-gray-100 py-1 dark:hover:bg-gray-800 w-full text-left cursor-pointer px-3 focus:outline-none focus:ring rounded truncate whitespace-nowrap text-gray-500 active:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 dark:active:text-gray-600 flex themeColor-center"
                 >
-                    <SunIcon class="h-5 w-5" aria-hidden="true" />
-                    <span class="ml-2">Light</span>
-                </button>
-                <button
-                    @click="setOption('dark')"
-                    class="flex themeColor-center hover:bg-gray-100 py-1 dark:hover:bg-gray-800 w-full text-left cursor-pointer px-3 focus:outline-none focus:ring rounded truncate whitespace-nowrap text-gray-500 active:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 dark:active:text-gray-600 themeColor-center"
-                >
-                    <MoonIcon class="h-5 w-5" aria-hidden="true" />
-                    <span class="ml-2">Dark</span>
-                </button>
-                <button
-                    @click="setOption('system')"
-                    class="flex themeColor-center hover:bg-gray-100 py-1 dark:hover:bg-gray-800 w-full text-left cursor-pointer px-3 focus:outline-none focus:ring rounded truncate whitespace-nowrap text-gray-500 active:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400 dark:active:text-gray-600 themeColor-center"
-                >
-                    <ComputerDesktopIcon class="h-5 w-5" aria-hidden="true" />
-                    <span class="ml-2">System</span>
+                    <component
+                        :is="item.icon"
+                        class="h-5 w-5"
+                        aria-hidden="true"
+                    />
+                    <span class="ml-2">{{ item.label }}</span>
                 </button>
             </div>
         </div>
@@ -52,7 +34,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import {
     SunIcon,
     MoonIcon,
@@ -60,8 +42,15 @@ import {
 } from "@heroicons/vue/20/solid";
 
 const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
-const option = ref(localStorage.getItem("option"));
+const option = ref(localStorage.getItem("option") || "system");
 const isDropdownOpen = ref(false);
+const dropdownContainer = ref(null);
+
+const options = [
+    { value: "light", label: "Light", icon: SunIcon },
+    { value: "dark", label: "Dark", icon: MoonIcon },
+    { value: "system", label: "System", icon: ComputerDesktopIcon },
+];
 
 const toggleDropdown = () => {
     isDropdownOpen.value = !isDropdownOpen.value;
@@ -73,41 +62,44 @@ const setOption = (selectedOption) => {
     isDropdownOpen.value = false;
 };
 
-const setTheme = () => {
-    if (option.value === "system") {
-        systemDarkMode.matches
-            ? toggleDarkClass("dark")
-            : toggleDarkClass("light");
-    } else {
-        option.value === "dark"
-            ? toggleDarkClass("dark")
-            : toggleDarkClass("light");
-    }
-};
+const currentIcon = ref(
+    options.find((opt) => opt.value === option.value)?.icon ||
+        ComputerDesktopIcon
+);
 
-const toggleDarkClass = (className) => {
-    if (className === "dark") {
-        document.documentElement.classList.add("dark");
-    } else {
-        document.documentElement.classList.remove("dark");
-    }
+const setTheme = () => {
+    const theme =
+        option.value === "system"
+            ? systemDarkMode.matches
+                ? "dark"
+                : "light"
+            : option.value;
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    currentIcon.value =
+        options.find((opt) => opt.value === option.value)?.icon ||
+        ComputerDesktopIcon;
 };
 
 watch(option, setTheme);
 
 onMounted(() => {
-    if (!option.value) {
-        setOption("system");
-    }
     setTheme();
-    systemDarkMode.addListener((event) => {
-        if (option.value === "system") {
-            if (event.matches) {
-                toggleDarkClass("dark");
-            } else {
-                toggleDarkClass("light");
-            }
-        }
-    });
+    systemDarkMode.addListener(setTheme);
+    document.addEventListener("click", handleClickOutside);
 });
+
+onUnmounted(() => {
+    systemDarkMode.removeListener(setTheme);
+    document.removeEventListener("click", handleClickOutside);
+});
+
+const handleClickOutside = (event) => {
+    if (
+        isDropdownOpen.value &&
+        dropdownContainer.value &&
+        !dropdownContainer.value.contains(event.target)
+    ) {
+        toggleDropdown();
+    }
+};
 </script>
