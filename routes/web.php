@@ -15,6 +15,10 @@ use Inertia\Inertia;
 |
 */
 
+Route::get('/', function () {
+    return Inertia::render('Homepage');
+})->name('homepage');
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
